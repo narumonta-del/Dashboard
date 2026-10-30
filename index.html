@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Dashboard ติดตามชิ้นงาน</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans+Thai:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F2F4F7;--card:#fff;--ink:#16233B;--mute:#5E6B80;--line:#DDE2EA;--blue:#2F5DA8;--amber:#C98A12;--green:#1F7A5A;--red:#C8102E;--teal:#3B8EA5}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:'IBM Plex Sans Thai','Noto Sans Thai',Tahoma,sans-serif;font-size:15px;line-height:1.5}
+.wrap{max-width:1100px;margin:0 auto;padding:24px 16px 48px}
+header{display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+h1{font-size:22px;margin:0;font-weight:600}
+.upd{font-size:13px;color:var(--mute)}
+button{font:inherit;border:1px solid var(--line);background:var(--card);color:var(--ink);padding:8px 14px;border-radius:6px;cursor:pointer}
+button:hover{border-color:var(--ink)}
+button:focus-visible,input:focus-visible,select:focus-visible{outline:2px solid var(--blue);outline-offset:2px}
+.filters{display:flex;flex-wrap:wrap;gap:14px;align-items:flex-end;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:14px 16px;margin-bottom:16px}
+.filters label{display:flex;flex-direction:column;font-size:13px;color:var(--mute);gap:4px}
+input,select{font:inherit;color:var(--ink);padding:7px 10px;border:1px solid var(--line);border-radius:6px;background:#fff;min-width:150px}
+.cards{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:8px;padding:16px 18px;border-top:4px solid var(--c)}
+.card .k{font-size:14px;color:var(--mute)}
+.card .v{font-size:34px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.2;margin-top:2px}
+.card .s{font-size:13px;color:var(--mute)}
+.split{display:flex;height:12px;border-radius:6px;overflow:hidden;background:var(--line);margin:14px 0 6px}
+.split i{display:block;height:100%}
+.legend{display:flex;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--mute);margin-bottom:20px}
+.legend b{display:inline-block;width:10px;height:10px;border-radius:2px;margin-right:5px}
+h2{font-size:16px;margin:0 0 8px;font-weight:600}
+.tw{background:var(--card);border:1px solid var(--line);border-radius:8px;overflow:auto;max-height:520px}
+table{border-collapse:collapse;width:100%;min-width:760px}
+th,td{padding:8px 12px;text-align:right;border-bottom:1px solid var(--line);white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{position:sticky;top:0;background:#E9EDF3;font-weight:500;font-size:13px;z-index:1}
+td.n{position:relative;font-variant-numeric:tabular-nums}
+td.n span{position:relative}
+td.n u{position:absolute;left:0;top:5px;bottom:5px;border-radius:0 3px 3px 0;opacity:.22;text-decoration:none}
+tfoot td{position:sticky;bottom:0;background:#E9EDF3;font-weight:600;border-bottom:0}
+.msg{padding:28px;text-align:center;color:var(--mute)}
+.err{color:var(--red)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div>
+      <h1>Dashboard ติดตามชิ้นงาน</h1>
+      <div class="upd" id="upd">กำลังโหลดข้อมูล…</div>
+    </div>
+    <button id="reload" type="button">รีเฟรชข้อมูล</button>
+  </header>
+
+  <div class="filters">
+    <label>วันที่รับฝาก ตั้งแต่<input type="date" id="from"></label>
+    <label>ถึงวันที่<input type="date" id="to"></label>
+    <label>ปลายทาง<select id="dest"><option value="">ทั้งหมด</option></select></label>
+    <button id="reset" type="button">ล้างตัวกรอง</button>
+  </div>
+
+  <div class="cards">
+    <div class="card" style="--c:var(--blue)"><div class="k">ชิ้นงานทั้งหมด</div><div class="v" id="c-total">–</div><div class="s">นับจากหมายเลข track</div></div>
+    <div class="card" style="--c:var(--amber)"><div class="k">อยู่ระหว่างดำเนินการ</div><div class="v" id="c-prog">–</div><div class="s" id="s-prog"></div></div>
+    <div class="card" style="--c:var(--green)"><div class="k">นำจ่ายแล้ว</div><div class="v" id="c-done">–</div><div class="s" id="s-done"></div></div>
+    <div class="card" style="--c:var(--red)"><div class="k">ส่งคืนต้นทาง</div><div class="v" id="c-ret">–</div><div class="s" id="s-ret"></div></div>
+  </div>
+  <div class="split" id="split"></div>
+  <div class="legend">
+    <span><b style="background:var(--green)"></b>นำจ่ายแล้ว</span>
+    <span><b style="background:var(--amber)"></b>อยู่ระหว่างดำเนินการ</span>
+    <span><b style="background:var(--red)"></b>ส่งคืนต้นทาง</span>
+  </div>
+
+  <h2>ปริมาณงานรายวันที่รับฝาก</h2>
+  <div class="tw" id="tw"><div class="msg">กำลังโหลด…</div></div>
+</div>
+
+<script>
+const SHEET_ID = '1VHDA678t7Pm-ftuPP0IZB-1Irh-pB-plFteVeNiy-_M';
+const SHEET_NAME = 'data';
+const URL_CSV = 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHEET_NAME);
+
+const COL = { track:0, recv:1, dest:2, ret:3, hand:4, cus:5, del:6 };
+
+let rows = [];
+const $ = id => document.getElementById(id);
+const fmt = n => n.toLocaleString('en-US');
+
+function parseCSV(t){
+  const out=[];let r=[],f='',q=false;
+  for(let i=0;i<t.length;i++){
+    const c=t[i];
+    if(q){ if(c==='"'){ if(t[i+1]==='"'){f+='"';i++;} else q=false; } else f+=c; }
+    else if(c==='"') q=true;
+    else if(c===','){ r.push(f); f=''; }
+    else if(c==='\n'){ r.push(f); out.push(r); r=[]; f=''; }
+    else if(c!=='\r') f+=c;
+  }
+  if(f!==''||r.length){ r.push(f); out.push(r); }
+  return out;
+}
+function parseDate(s){
+  s=(s||'').trim(); if(!s) return '';
+  let d,m,y,x;
+  if(x=s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/)){ y=+x[1]; m=+x[2]; d=+x[3]; }
+  else if(x=s.match(/^(\d{1,2})[\/\-.](\d{1,2})[\/\-.](\d{4})/)){ d=+x[1]; m=+x[2]; y=+x[3]; }
+  else return '';
+  if(y>2400) y-=543;
+  if(m<1||m>12||d<1||d>31) return '';
+  return y+'-'+String(m).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+}
+const filled = s => { s=(s||'').trim(); return s!=='' && s!=='-'; };
+const show = iso => iso ? iso.slice(8)+'/'+iso.slice(5,7)+'/'+iso.slice(0,4) : 'ไม่ระบุวันที่';
+
+async function load(){
+  $('upd').textContent='กำลังโหลดข้อมูล…';
+  try{
+    const res = await fetch(URL_CSV);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const data = parseCSV(await res.text());
+    const h=(data[0]||[]).map(x=>(x||'').trim());
+    const find=(re,d)=>{const i=h.findIndex(x=>re.test(x));return i>=0?i:d;};
+    const C={recv:find(/รับฝาก/,COL.recv),track:find(/barcode|track|หมายเลข/i,COL.track),dest:find(/ปลายทาง/,COL.dest),ret:find(/ส่งคืน/,COL.ret),hand:find(/พันธมิตร/,COL.hand),cus:find(/ศุลกากร|custom/i,COL.cus),del:find(/นำจ่าย/,COL.del)};
+    rows = data.map(r=>({
+      recv:parseDate(r[C.recv]), track:(r[C.track]||'').trim(), dest:(r[C.dest]||'').trim(),
+      ret:filled(r[C.ret]), hand:filled(r[C.hand]), cus:filled(r[C.cus]), del:filled(r[C.del])
+    })).filter(r=>r.track && !/barcode|track|หมายเลข/i.test(r.track));
+    const dests=[...new Set(rows.map(r=>r.dest).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
+    const cur=$('dest').value;
+    $('dest').innerHTML='<option value="">ทั้งหมด</option>'+dests.map(d=>'<option>'+esc(d)+'</option>').join('');
+    $('dest').value=dests.includes(cur)?cur:'';
+    $('upd').textContent='อัปเดตล่าสุด '+new Date().toLocaleString('th-TH');
+    render();
+  }catch(e){
+    $('upd').innerHTML='<span class="err">โหลดข้อมูลไม่สำเร็จ</span>';
+    $('tw').innerHTML='<div class="msg err">ดึงข้อมูลจาก Google Sheet ไม่ได้ ('+esc(e.message)+')<br>ตรวจสอบว่าตั้งค่าแชร์เป็น "ทุกคนที่มีลิงก์ดูได้" และเปิดหน้านี้ผ่านเว็บ (ไม่ใช่ดับเบิลคลิกไฟล์)</div>';
+  }
+}
+function esc(s){return String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));}
+
+function render(){
+  const f=$('from').value, t=$('to').value, d=$('dest').value;
+  const list = rows.filter(r=>{
+    if(d && r.dest!==d) return false;
+    if((f||t) && !r.recv) return false;
+    if(f && r.recv<f) return false;
+    if(t && r.recv>t) return false;
+    return true;
+  });
+  const total=list.length;
+  const ret=list.filter(r=>r.ret).length;
+  const done=list.filter(r=>!r.ret && r.del).length;
+  const prog=list.filter(r=>!r.ret && !r.del).length;
+  const pct=n=>total?(n*100/total).toFixed(1)+'% ของทั้งหมด':'';
+  $('c-total').textContent=fmt(total);
+  $('c-prog').textContent=fmt(prog); $('s-prog').textContent=pct(prog);
+  $('c-done').textContent=fmt(done); $('s-done').textContent=pct(done);
+  $('c-ret').textContent=fmt(ret);   $('s-ret').textContent=pct(ret);
+  $('split').innerHTML = total
+    ? '<i style="width:'+done*100/total+'%;background:var(--green)"></i><i style="width:'+prog*100/total+'%;background:var(--amber)"></i><i style="width:'+ret*100/total+'%;background:var(--red)"></i>' : '';
+
+  const g={};
+  list.forEach(r=>{
+    const k=r.recv||'';
+    const o=g[k]||(g[k]={dep:0,ret:0,hand:0,cus:0,del:0});
+    o.dep++; if(r.ret)o.ret++; if(r.hand)o.hand++;
+    if(r.cus && !r.del)o.cus++;
+    if(r.del && !r.ret)o.del++;
+  });
+  const keys=Object.keys(g).sort().reverse();
+  if(!keys.length){ $('tw').innerHTML='<div class="msg">ไม่พบข้อมูลตามตัวกรองที่เลือก</div>'; return; }
+  const cols=[['dep','ปริมาณงานรับฝาก','var(--blue)'],['ret','ส่งคืนต้นทาง','var(--red)'],['hand','ส่งมอบให้พันธมิตร','var(--teal)'],['cus','อยู่ในศุลกากร','var(--amber)'],['del','นำจ่ายแล้ว','var(--green)']];
+  const max={}; cols.forEach(([c])=>max[c]=Math.max(1,...keys.map(k=>g[k][c])));
+  const sum={}; cols.forEach(([c])=>sum[c]=keys.reduce((a,k)=>a+g[k][c],0));
+  const cell=(v,c,col)=>'<td class="n"><u style="width:'+(v*100/max[c])+'%;background:'+col+'"></u><span>'+fmt(v)+'</span></td>';
+  $('tw').innerHTML='<table><thead><tr><th>วันที่รับฝาก</th>'+cols.map(c=>'<th>'+c[1]+'</th>').join('')+'</tr></thead><tbody>'
+    +keys.map(k=>'<tr><td>'+show(k)+'</td>'+cols.map(([c,,col])=>cell(g[k][c],c,col)).join('')+'</tr>').join('')
+    +'</tbody><tfoot><tr><td>รวม</td>'+cols.map(([c])=>'<td>'+fmt(sum[c])+'</td>').join('')+'</tr></tfoot></table>';
+}
+
+['from','to','dest'].forEach(id=>$(id).addEventListener('change',render));
+$('reset').onclick=()=>{$('from').value='';$('to').value='';$('dest').value='';render();};
+$('reload').onclick=load;
+load();
+</script>
+</body>
+</html>
