@@ -73,10 +73,24 @@ tfoot td{position:sticky;bottom:0;background:#DDE4EF;font-weight:600;border-bott
 .mh h3{margin:0;font-size:16px}
 .mw{overflow:auto}
 .mw table{min-width:720px}
-@media print{@page{size:A4 landscape;margin:10mm}
-.noprint,.mo{display:none!important}body{background:#fff}
+.tw.af{max-height:460px}.tw.af table{min-width:560px}
+.pr{cursor:pointer}.pr:hover td{background:#F1F5FB}.cr td{background:#F8FAFD;font-size:14px}
+.ar{display:inline-block;width:18px;color:var(--mute)}.mt{color:var(--mute);font-size:12.5px}
+.ctl{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin:4px 0 8px;font-size:13px}.ck{display:flex;gap:6px;align-items:center;padding:0 6px}
+.lt table{min-width:0}.lt{max-height:340px}
+.lt th:not(:first-child),.lt td:not(:first-child){text-align:right;font-variant-numeric:tabular-nums}
+@media print{@page{size:A4 landscape;margin:8mm}
+.noprint,.mo{display:none!important}body{background:#fff;font-size:12px}
+header{padding:6px 12px}#logo{height:34px}h1{font-size:18px}
+.wrap{max-width:none;padding:6px 0}.sum{margin:6px 0 8px}.cards{gap:8px;margin-top:8px}
+.card{padding:7px 12px}.card .v{font-size:24px}.panel{padding:10px 12px}
+.two{gap:10px;margin-top:10px}.pb{break-before:page;margin-top:0!important}
 .tw,.rrw{max-height:none!important;overflow:visible!important}
-th,tfoot td{position:static!important}.panel,.card,tr{break-inside:avoid}}
+.rrw{columns:2;column-gap:24px}.rr{break-inside:avoid;padding:0}
+th,td{padding:4px 8px}th,tfoot td{position:static!important}
+thead{display:table-header-group}tfoot{display:table-footer-group}
+.panel,.card{break-inside:avoid}.panel.brk{break-inside:auto}tr{break-inside:avoid}h2{break-after:avoid;margin-bottom:6px}
+.nb i{height:8px}}
 </style>
 </head>
 <body>
@@ -97,7 +111,7 @@ th,tfoot td{position:static!important}.panel,.card,tr{break-inside:avoid}}
       <div class="dt"><input type="text" id="to" placeholder="วว/ดด/ปปปป" maxlength="10" inputmode="numeric"><button type="button" data-p="toP" aria-label="เลือกจากปฏิทิน">📅</button><input type="date" id="toP" tabindex="-1"></div></div>
     <div class="lb">ปลายทาง (เลือกได้หลายรายการ)
       <div class="ms"><button type="button" id="msb">ทั้งหมด ▾</button>
-        <div class="pn" id="pn" hidden><button type="button" class="lnk" id="msClr">ล้างการเลือก (= ทั้งหมด)</button><div id="msl"></div></div></div></div>
+        <div class="pn" id="pn" hidden><button type="button" class="lnk" id="msAll">เลือกทั้งหมด</button><button type="button" class="lnk" id="msNone">ไม่เลือกเลย</button><div id="msl"></div></div></div></div>
     <button type="button" class="pri" id="apply">Apply</button>
     <button type="button" id="reset">ล้างตัวกรอง</button>
   </div>
@@ -112,18 +126,22 @@ th,tfoot td{position:static!important}.panel,.card,tr{break-inside:avoid}}
   <div class="split" id="split"></div>
   <div class="legend"><span><b style="background:var(--green)"></b>นำจ่ายแล้ว</span><span><b style="background:var(--amber)"></b>อยู่ระหว่างดำเนินการ</span><span><b style="background:var(--red)"></b>ส่งคืนต้นทาง</span></div>
 
-  <div class="cards">
-    <div class="card" style="--c:var(--teal)"><div class="k">ระยะเวลาเฉลี่ย รับฝาก → นำจ่าย (Calendar day)</div><div class="v" id="l-c">–</div><div class="s" id="ls-c"></div></div>
-    <div class="card" style="--c:var(--teal)"><div class="k">ระยะเวลาเฉลี่ย รับฝาก → นำจ่าย (Working day)</div><div class="v" id="l-w">–</div><div class="s" id="ls-w"></div></div>
-  </div>
-  <p class="note">Working day = นับวันจันทร์–ศุกร์ ตั้งแต่วันถัดจากวันรับฝากถึงวันนำจ่าย (ยังไม่หักวันหยุดนักขัตฤกษ์ เว้นแต่ระบุใน HOLIDAYS) · ไม่รวมชิ้นที่ส่งคืนต้นทาง</p>
+
 
   <div class="two">
     <div class="panel"><h2>แนวโน้มปริมาณรับฝากรายวัน (ชิ้น)</h2><div id="trend"></div></div>
-    <div class="panel"><h2>อัตราส่งคืนแยกตามปลายทาง</h2><div class="rrw" id="rr"></div><p class="note">เรียงจากอัตราสูงไปต่ำ · ปลายทางที่มีชิ้นงานน้อย อัตราอาจผันผวนได้</p></div>
+    <div class="panel"><h2>ค่าเฉลี่ย (วัน) ที่ทำได้จริง</h2><div id="lt"></div>
+      <p class="note">เฉลี่ยจากวันรับฝาก → วันนำจ่าย จัดกลุ่มตามเดือนที่รับฝาก · เฉพาะชิ้นที่นำจ่ายแล้ว ไม่รวมส่งคืนต้นทาง · Working day = นับจันทร์–ศุกร์ ตั้งแต่วันถัดจากวันรับฝากถึงวันนำจ่าย (หักวันหยุดได้ที่ HOLIDAYS)</p></div>
   </div>
+  <div class="panel pb" style="margin-top:16px"><h2>อัตราส่งคืนแยกตามปลายทาง</h2><div class="rrw" id="rr"></div><p class="note">เรียงจากอัตราสูงไปต่ำ · ปลายทางที่มีชิ้นงานน้อย อัตราอาจผันผวนได้</p></div>
 
-  <div class="panel" style="margin-top:16px"><h2>ปริมาณงานรายวันที่รับฝาก <span class="note noprint">(คลิกตัวเลขเพื่อดูเลข track)</span></h2><div class="tw" id="tw"><div class="msg">กำลังโหลด…</div></div></div>
+  <div class="panel brk" style="margin-top:16px"><h2>ส่งคืนต้นทาง แยกตามสังกัดที่ทำการต้นทาง <span class="note noprint">(คลิกแถวเพื่อดูที่ทำการ · คลิกตัวเลขเพื่อดูเลข track)</span></h2>
+    <div class="ctl noprint"><button type="button" id="afOpen">ขยายทั้งหมด</button><button type="button" id="afShut">ยุบทั้งหมด</button>
+      <label class="ck"><input type="checkbox" id="onlyRet" checked> แสดงเฉพาะที่มีการส่งคืน</label><button type="button" id="afCsv">ดาวน์โหลด CSV</button></div>
+    <div class="tw af" id="aff"></div>
+    <p class="note">เรียงตามจำนวนส่งคืนมากไปน้อย · อัตราส่งคืน = ส่งคืน ÷ ชิ้นงานทั้งหมดของสังกัด/ที่ทำการนั้น (ตามตัวกรองที่เลือก)</p></div>
+
+  <div class="panel brk" style="margin-top:16px"><h2>ปริมาณงานรายวันที่รับฝาก <span class="note noprint">(คลิกตัวเลขเพื่อดูเลข track)</span></h2><div class="tw" id="tw"><div class="msg">กำลังโหลด…</div></div><p class="note">แต่ละชิ้นนับเพียง 1 สถานะ (สถานะล่าสุด: นำจ่ายแล้ว > อยู่ในศุลกากร > ส่งมอบพันธมิตร > รอส่งมอบ; ส่งคืนต้นทางแยกต่างหาก) ผลรวมของทุกสถานะจึงเท่ากับปริมาณงานรับฝาก</p></div>
 </div>
 
 <div class="mo" id="modal" hidden><div class="mb" role="dialog" aria-modal="true">
@@ -134,17 +152,22 @@ th,tfoot td{position:static!important}.panel,.card,tr{break-inside:avoid}}
 const SHEET_ID='1VHDA678t7Pm-ftuPP0IZB-1Irh-pB-plFteVeNiy-_M';
 const SHEET_NAME='data';
 const URL_CSV='https://docs.google.com/spreadsheets/d/'+SHEET_ID+'/gviz/tq?tqx=out:csv&sheet='+encodeURIComponent(SHEET_NAME);
-const COL={track:0,recv:1,dest:2,ret:3,hand:4,cus:5,del:6};
+const COL={track:0,recv:1,dest:2,ret:3,hand:4,cus:5,del:6,office:7,affil:8};
 const HOLIDAYS=[]; // วันหยุดที่ต้องหักออกจาก Working day เช่น '2026-10-13','2026-10-23'
 const HOL=new Set(HOLIDAYS);
 const IGNORE_DEST=['ตัวกรองปลายทาง']; // ข้อความที่ไม่ใช่ปลายทางจริง จะถูกตัดออกทั้งแถว
 
+let open=new Set(),onlyRet=true,affKeys=[],affFlat=[];
 let rows=[],dests=[],view=[],app={from:'',to:'',dests:new Set()},pend=new Set(),mrows=[],mhead=[],tbl=null;
 const $=id=>document.getElementById(id);
 const fmt=n=>n.toLocaleString('en-US');
 const esc=s=>String(s).replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const NAMES={dep:'ชิ้นงานที่รับฝาก',prog:'อยู่ระหว่างดำเนินการ',del:'นำจ่ายแล้ว',ret:'ส่งคืนต้นทาง',hand:'ส่งมอบให้พันธมิตร',cus:'อยู่ในศุลกากร'};
-const PRED={dep:()=>true,ret:r=>r.ret,hand:r=>r.hand,cus:r=>r.cus&&!r.del,del:r=>r.del&&!r.ret,prog:r=>!r.ret&&!r.del};
+const NAMES={dep:'ชิ้นงานที่รับฝาก',wait:'รับฝาก (รอส่งมอบพันธมิตร)',prog:'อยู่ระหว่างดำเนินการ',del:'นำจ่ายแล้ว',ret:'ส่งคืนต้นทาง',hand:'ส่งมอบให้พันธมิตร',cus:'อยู่ในศุลกากร'};
+const PRED={dep:()=>true,ret:r=>!!r.ret,
+  wait:r=>!r.ret&&!r.del&&!r.cus&&!r.hand,hand:r=>!r.ret&&!r.del&&!r.cus&&!!r.hand,
+  cus:r=>!r.ret&&!r.del&&!!r.cus,del:r=>!r.ret&&!!r.del,prog:r=>!r.ret&&!r.del};
+const statKey=r=>r.ret?'ret':r.del?'del':r.cus?'cus':r.hand?'hand':'wait'; // สถานะล่าสุด 1 ชิ้น = 1 สถานะ
+const MON=['January','February','March','April','May','June','July','August','September','October','November','December'];
 const stat=r=>r.ret?'ส่งคืนต้นทาง':r.del?'นำจ่ายแล้ว':r.cus?'อยู่ในศุลกากร':r.hand?'ส่งมอบพันธมิตรแล้ว':'รับฝากแล้ว';
 
 function parseCSV(t){const o=[];let r=[],f='',q=false;
@@ -174,11 +197,13 @@ async function load(){
     const data=parseCSV(await res.text());
     const h=(data[0]||[]).map(x=>(x||'').trim());
     const find=(re,d)=>{const i=h.findIndex(x=>re.test(x));return i>=0?i:d};
-    const C={recv:find(/รับฝาก/,COL.recv),track:find(/barcode|track|หมายเลข/i,COL.track),dest:find(/ปลายทาง/,COL.dest),ret:find(/ส่งคืน/,COL.ret),hand:find(/พันธมิตร/,COL.hand),cus:find(/ศุลกากร|custom/i,COL.cus),del:find(/นำจ่าย/,COL.del)};
+    const C={recv:find(/รับฝาก/,COL.recv),track:find(/barcode|track|หมายเลข/i,COL.track),dest:find(/ปลายทาง/,COL.dest),ret:find(/ส่งคืน/,COL.ret),hand:find(/พันธมิตร/,COL.hand),cus:find(/ศุลกากร|custom/i,COL.cus),del:find(/นำจ่าย/,COL.del),affil:find(/สังกัด/,COL.affil),office:(i=>i>=0?i:COL.office)(h.findIndex(x=>/ที่ทำการ/.test(x)&&!/สังกัด/.test(x)))};
     rows=data.map(r=>({recv:parseDate(r[C.recv]),track:(r[C.track]||'').trim(),dest:(r[C.dest]||'').trim(),
-      ret:T(r[C.ret]),hand:T(r[C.hand]),cus:T(r[C.cus]),del:T(r[C.del])})).filter(r=>r.track&&!/barcode|track|หมายเลข/i.test(r.track)&&!IGNORE_DEST.includes(r.dest));
+      ret:T(r[C.ret]),hand:T(r[C.hand]),cus:T(r[C.cus]),del:T(r[C.del]),
+      office:(r[C.office]||'').trim()||'ไม่ระบุ',affil:(r[C.affil]||'').trim()||'ไม่ระบุ'})).filter(r=>r.track&&!/barcode|track|หมายเลข/i.test(r.track)&&!IGNORE_DEST.includes(r.dest));
+    const prev=dests,wasAll=!prev.length||prev.every(d=>pend.has(d));
     dests=[...new Set(rows.map(r=>r.dest).filter(Boolean))].sort((a,b)=>a.localeCompare(b,'th'));
-    pend=new Set([...pend].filter(d=>dests.includes(d)));app.dests=new Set([...app.dests].filter(d=>dests.includes(d)));
+    if(wasAll){pend=new Set(dests);app.dests=new Set(dests)}else{pend=new Set([...pend].filter(d=>dests.includes(d)));app.dests=new Set([...app.dests].filter(d=>dests.includes(d)))}
     buildMs();
     $('upd').textContent='อัปเดตล่าสุด '+new Date().toLocaleString('th-TH');
     render();
@@ -189,14 +214,15 @@ async function load(){
 }
 
 /* ---------- ตัวกรอง ---------- */
-function msLabel(){const a=[...pend];$('msb').textContent=(!a.length?'ทั้งหมด':a.length<=3?a.join(', '):a.length+' ปลายทาง')+' ▾'}
+function msLabel(){const a=[...pend];$('msb').textContent=(a.length===dests.length?'ทั้งหมด ('+a.length+')':!a.length?'ไม่ได้เลือก':a.length<=3?a.join(', '):a.length+' จาก '+dests.length+' ปลายทาง')+' ▾'}
 function buildMs(){
   $('msl').innerHTML=dests.map(d=>'<label><input type="checkbox" value="'+esc(d)+'"'+(pend.has(d)?' checked':'')+'>'+esc(d)+'</label>').join('');
   msLabel();
 }
 $('msl').addEventListener('change',e=>{e.target.checked?pend.add(e.target.value):pend.delete(e.target.value);msLabel()});
 $('msb').onclick=e=>{e.stopPropagation();$('pn').hidden=!$('pn').hidden};
-$('msClr').onclick=()=>{pend.clear();buildMs()};
+$('msAll').onclick=()=>{pend=new Set(dests);buildMs()};
+$('msNone').onclick=()=>{pend.clear();buildMs()};
 document.addEventListener('click',e=>{if(!e.target.closest('.ms'))$('pn').hidden=true});
 ['from','to'].forEach(id=>{
   $(id).addEventListener('input',e=>{const v=e.target.value.replace(/\D/g,'').slice(0,8);
@@ -214,12 +240,12 @@ function applyF(){
   app={from:pf,to:pt,dests:new Set(pend)};render();
 }
 $('apply').onclick=applyF;
-$('reset').onclick=()=>{$('from').value='';$('to').value='';$('from').classList.remove('bad');$('to').classList.remove('bad');pend.clear();buildMs();applyF()};
+$('reset').onclick=()=>{$('from').value='';$('to').value='';$('from').classList.remove('bad');$('to').classList.remove('bad');pend=new Set(dests);buildMs();applyF()};
 
 /* ---------- แสดงผล ---------- */
 function render(){
   view=rows.filter(r=>{
-    if(app.dests.size&&!app.dests.has(r.dest))return false;
+    if(app.dests.size!==dests.length&&!app.dests.has(r.dest))return false;
     if((app.from||app.to)&&!r.recv)return false;
     if(app.from&&r.recv<app.from)return false;
     if(app.to&&r.recv>app.to)return false;return true});
@@ -231,17 +257,20 @@ function render(){
   $('c-done').textContent=fmt(done);$('s-done').textContent=pct(done);
   $('c-ret').textContent=fmt(ret);$('s-ret').textContent=pct(ret);
   $('split').innerHTML=n?'<i style="width:'+done*100/n+'%;background:var(--green)"></i><i style="width:'+prog*100/n+'%;background:var(--amber)"></i><i style="width:'+ret*100/n+'%;background:var(--red)"></i>':'';
-  $('sum').textContent='ตัวกรองที่ใช้ — วันที่รับฝาก: '+(app.from?show(app.from):'ทั้งหมด')+' ถึง '+(app.to?show(app.to):'ทั้งหมด')+' · ปลายทาง: '+(app.dests.size?[...app.dests].join(', '):'ทั้งหมด')+' · '+fmt(n)+' ชิ้น';
-  lead();$('trend').innerHTML=trend();$('rr').innerHTML=retChart();table();
+  $('sum').textContent='ตัวกรองที่ใช้ — วันที่รับฝาก: '+(app.from?show(app.from):'ทั้งหมด')+' ถึง '+(app.to?show(app.to):'ทั้งหมด')+' · ปลายทาง: '+(app.dests.size===dests.length?'ทั้งหมด':app.dests.size?[...app.dests].join(', '):'ไม่ได้เลือก')+' · '+fmt(n)+' ชิ้น';
+  lead();$('trend').innerHTML=trend();$('rr').innerHTML=retChart();aff();table();
 }
 function lead(){
-  const c=[],w=[];
-  view.forEach(r=>{if(r.ret||!r.del||!r.recv)return;const d=parseDate(r.del);if(!d||d<r.recv)return;c.push(dn(d)-dn(r.recv));w.push(wdays(r.recv,d))});
-  [['c',c],['w',w]].forEach(([k,a])=>{
-    if(!a.length){$('l-'+k).textContent='–';$('ls-'+k).textContent='ยังไม่มีชิ้นที่นำจ่ายแล้ว';return}
-    $('l-'+k).innerHTML=(a.reduce((x,y)=>x+y,0)/a.length).toFixed(1)+' <small>วัน</small>';
-    $('ls-'+k).textContent='จาก '+fmt(a.length)+' ชิ้น · เร็วสุด '+Math.min(...a)+' – ช้าสุด '+Math.max(...a)+' วัน';
-  });
+  const g={},ac=[],aw=[];
+  view.forEach(r=>{if(r.ret||!r.del||!r.recv)return;const d=parseDate(r.del);if(!d||d<r.recv)return;
+    const o=g[r.recv.slice(0,7)]||(g[r.recv.slice(0,7)]={c:[],w:[]}),c=dn(d)-dn(r.recv),w=wdays(r.recv,d);
+    o.c.push(c);o.w.push(w);ac.push(c);aw.push(w)});
+  const ks=Object.keys(g).sort();
+  if(!ks.length){$('lt').innerHTML='<div class="msg">ยังไม่มีชิ้นที่นำจ่ายแล้ว</div>';return}
+  const av=a=>(a.reduce((x,y)=>x+y,0)/a.length).toFixed(2),my=new Set(ks.map(k=>k.slice(0,4))).size>1;
+  $('lt').innerHTML='<div class="tw lt"><table><thead><tr><th>Month</th><th>Calendar day</th><th>Working day</th></tr></thead><tbody>'
+    +ks.map(k=>'<tr><td>'+MON[+k.slice(5)-1]+(my?' '+k.slice(0,4):'')+'</td><td>'+av(g[k].c)+'</td><td>'+av(g[k].w)+'</td></tr>').join('')
+    +'</tbody><tfoot><tr><td>รวม</td><td>'+av(ac)+'</td><td>'+av(aw)+'</td></tr></tfoot></table></div>';
 }
 function smooth(P){ /* เส้นโค้งแบบ monotone: เรียบ และไม่โค้งเกินค่าจริง/ไม่ต่ำกว่า 0 */
   const f=v=>v.toFixed(1),n=P.length;
@@ -275,13 +304,35 @@ function retChart(){
   return ks.map(k=>{const o=g[k],p=o.r*100/o.n,lk=o.r&&k;
     return '<div class="rr"><b>'+esc(k||'–')+'</b><span>'+p.toFixed(1)+'%</span><div class="tr"><i style="width:'+p+'%"></i></div><span class="'+(lk?'lk num':'')+'" style="min-width:0"'+(lk?' data-c="ret" data-t="'+esc(k)+'"':'')+'>'+o.r+'/'+o.n+'</span></div>'}).join('');
 }
+function aff(){
+  const A={};
+  view.forEach(r=>{const a=A[r.affil]||(A[r.affil]={n:0,r:0,o:{}});a.n++;if(r.ret)a.r++;
+    const o=a.o[r.office]||(a.o[r.office]={n:0,r:0});o.n++;if(r.ret)o.r++});
+  const srt=O=>Object.keys(O).sort((x,y)=>O[y].r-O[x].r||O[y].r/O[y].n-O[x].r/O[x].n||x.localeCompare(y,'th'));
+  const all=srt(A);affKeys=all;
+  affFlat=[];all.forEach(k=>srt(A[k].o).forEach(o=>affFlat.push([k,o,A[k].o[o].r,A[k].o[o].n,A[k].o[o].n?(A[k].o[o].r*100/A[k].o[o].n).toFixed(1)+'%':''])));
+  const ks=all.filter(k=>!onlyRet||A[k].r>0);
+  if(!ks.length){$('aff').innerHTML='<div class="msg">'+(view.length?'ไม่มีชิ้นงานที่ส่งคืนต้นทางในตัวกรองนี้':'ไม่มีข้อมูล')+'</div>';return}
+  const mx=Math.max(1,...ks.map(k=>A[k].r)),R=view.filter(r=>r.ret).length,N=view.length;
+  const rate=(r,n)=>n?(r*100/n).toFixed(1)+'%':'–';
+  const cell=(v,at,w)=>'<td><div class="nb"><span class="num'+(v&&at?' lk':'')+'"'+(v&&at?at:'')+'>'+fmt(v)+'</span>'+(w==null?'':'<i style="width:'+w+'px;background:#C20F2F"></i>')+'</div></td>';
+  let h='<table><thead><tr><th>สังกัด / ที่ทำการต้นทาง</th><th>ส่งคืน (ชิ้น)</th><th>ทั้งหมด (ชิ้น)</th><th>อัตราส่งคืน</th></tr></thead><tbody>';
+  ks.forEach(k=>{const a=A[k],op=open.has(k),ea=esc(k),at=' data-a="'+ea+'"';
+    h+='<tr class="pr" data-tg="'+ea+'"><td><span class="ar">'+(op?'▾':'▸')+'</span><b>'+ea+'</b> <span class="mt">('+Object.keys(a.o).length+' ที่ทำการ)</span></td>'
+      +cell(a.r,' data-c="ret"'+at,a.r*90/mx)+cell(a.n,' data-c="dep"'+at)+'<td>'+rate(a.r,a.n)+'</td></tr>';
+    if(op)srt(a.o).filter(o=>!onlyRet||a.o[o].r>0).forEach(o=>{const c=a.o[o],ao=at+' data-o="'+esc(o)+'"';
+      h+='<tr class="cr"><td style="padding-left:40px">'+esc(o)+'</td>'+cell(c.r,' data-c="ret"'+ao,c.r*90/mx)+cell(c.n,' data-c="dep"'+ao)+'<td>'+rate(c.r,c.n)+'</td></tr>'});
+  });
+  h+='</tbody><tfoot><tr><td>รวม</td>'+cell(R,' data-c="ret"')+cell(N,' data-c="dep"')+'<td>'+rate(R,N)+'</td></tr></tfoot></table>';
+  $('aff').innerHTML=h;
+}
 function table(){
   const g={};
-  view.forEach(r=>{const o=g[r.recv]||(g[r.recv]={dep:0,ret:0,hand:0,cus:0,del:0});o.dep++;
-    ['ret','hand','cus','del'].forEach(k=>{if(PRED[k](r))o[k]++})});
+  view.forEach(r=>{const o=g[r.recv]||(g[r.recv]={dep:0,ret:0,wait:0,hand:0,cus:0,del:0});o.dep++;o[statKey(r)]++});
   const keys=Object.keys(g).sort().reverse();
   if(!keys.length){tbl=null;$('tw').innerHTML='<div class="msg">ไม่พบข้อมูลตามตัวกรองที่เลือก</div>';return}
-  const cols=[['dep','ปริมาณงานรับฝาก','#153E8A'],['ret','ส่งคืนต้นทาง','#C20F2F'],['hand','ส่งมอบให้พันธมิตร','#17748F'],['cus','อยู่ในศุลกากร','#B86E00'],['del','นำจ่ายแล้ว','#0F6B4B']];
+  let cols=[['dep','ปริมาณงานรับฝาก','#153E8A'],['ret','ส่งคืนต้นทาง','#C20F2F'],['wait','รอส่งมอบพันธมิตร','#6B7A93'],['hand','ส่งมอบให้พันธมิตร','#17748F'],['cus','อยู่ในศุลกากร','#B86E00'],['del','นำจ่ายแล้ว','#0F6B4B']];
+  if(!keys.some(k=>g[k].wait))cols=cols.filter(c=>c[0]!=='wait');
   const mx={},sm={};cols.forEach(([c])=>{mx[c]=Math.max(1,...keys.map(k=>g[k][c]));sm[c]=keys.reduce((a,k)=>a+g[k][c],0)});
   const cell=(v,c,col,k)=>'<td><div class="nb"><span class="num'+(v?' lk':'')+'"'+(v?' data-c="'+c+'"'+(k===null?'':' data-d="'+(k||'none')+'"'):'')+'>'+fmt(v)+'</span>'+(k===null?'':'<i style="width:'+(v*90/mx[c])+'px;background:'+col+'"></i>')+'</div></td>';
   $('tw').innerHTML='<table><thead><tr><th>วันที่รับฝาก</th>'+cols.map(c=>'<th>'+c[1]+'</th>').join('')+'</tr></thead><tbody>'
@@ -291,13 +342,15 @@ function table(){
 }
 
 /* ---------- ดูรายการ (drill-down) ---------- */
-document.addEventListener('click',e=>{const t=e.target.closest('[data-c]');if(t&&!t.closest('#modal'))openList(t.dataset)});
+document.addEventListener('click',e=>{
+  const t=e.target.closest('[data-c]');if(t&&!t.closest('#modal')){openList(t.dataset);return}
+  const g=e.target.closest('[data-tg]');if(g){const k=g.dataset.tg;open.has(k)?open.delete(k):open.add(k);aff()}});
 function openList(d){
-  const L=view.filter(r=>PRED[d.c](r)&&(d.d===undefined||(d.d==='none'?!r.recv:r.recv===d.d))&&(!d.t||r.dest===d.t))
+  const L=view.filter(r=>PRED[d.c](r)&&(d.d===undefined||(d.d==='none'?!r.recv:r.recv===d.d))&&(!d.t||r.dest===d.t)&&(!d.a||r.affil===d.a)&&(!d.o||r.office===d.o))
     .sort((a,b)=>a.recv<b.recv?-1:a.recv>b.recv?1:a.track<b.track?-1:1);
-  mhead=['เลข Track','วันที่รับฝาก','ปลายทาง','สถานะ','ส่งคืนต้นทาง','ส่งมอบให้พันธมิตร','ศุลกากร','นำจ่าย'];
-  mrows=L.map(r=>[r.track,show(r.recv),r.dest,stat(r),dv(r.ret),dv(r.hand),dv(r.cus),dv(r.del)]);
-  $('mt').textContent=NAMES[d.c]+(d.d!==undefined?' · รับฝากวันที่ '+show(d.d==='none'?'':d.d):'')+(d.t?' · ปลายทาง '+d.t:'')+' — '+fmt(L.length)+' ชิ้น';
+  mhead=['เลข Track','วันที่รับฝาก','ปลายทาง','สังกัดต้นทาง','ที่ทำการต้นทาง','สถานะ','ส่งคืนต้นทาง','ส่งมอบให้พันธมิตร','ศุลกากร','นำจ่าย'];
+  mrows=L.map(r=>[r.track,show(r.recv),r.dest,r.affil,r.office,stat(r),dv(r.ret),dv(r.hand),dv(r.cus),dv(r.del)]);
+  $('mt').textContent=NAMES[d.c]+(d.d!==undefined?' · รับฝากวันที่ '+show(d.d==='none'?'':d.d):'')+(d.t?' · ปลายทาง '+d.t:'')+(d.a?' · สังกัด '+d.a:'')+(d.o?' · ที่ทำการ '+d.o:'')+' — '+fmt(L.length)+' ชิ้น';
   $('mbody').innerHTML='<table><thead><tr>'+mhead.map(h=>'<th>'+h+'</th>').join('')+'</tr></thead><tbody>'+mrows.map(r=>'<tr>'+r.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')+'</tbody></table>';
   $('modal').hidden=false;
 }
@@ -316,6 +369,10 @@ const today=()=>new Date().toISOString().slice(0,10);
 $('csv').onclick=()=>{if(tbl)dl('dashboard_รายวัน_'+today()+'.csv',tbl.head,tbl.data);else alert('ไม่มีข้อมูลให้ดาวน์โหลด')};
 $('mcsv').onclick=()=>dl('รายการชิ้นงาน_'+today()+'.csv',mhead,mrows);
 $('pdf').onclick=()=>{const t=document.title;document.title='Dashboard_'+today();window.print();document.title=t};
+$('afOpen').onclick=()=>{open=new Set(affKeys);aff()};
+$('afShut').onclick=()=>{open.clear();aff()};
+$('onlyRet').onchange=e=>{onlyRet=e.target.checked;aff()};
+$('afCsv').onclick=()=>dl('ส่งคืนตามสังกัด_'+today()+'.csv',['สังกัดที่ทำการต้นทาง','ที่ทำการต้นทาง','ส่งคืน (ชิ้น)','ทั้งหมด (ชิ้น)','อัตราส่งคืน'],affFlat);
 $('reload').onclick=load;
 load();
 </script>
